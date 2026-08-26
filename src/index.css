@@ -1,0 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+body {
+  font-family: 'Outfit', system-ui, sans-serif;
+  background-color: #F7F5F0;
+  color: #18180F;
+}
