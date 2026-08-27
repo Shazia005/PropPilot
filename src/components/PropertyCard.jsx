@@ -1,42 +1,112 @@
 import React from 'react';
-import { Bed, Bath, Square, MapPin, Sparkles } from 'lucide-react';
 
-export default function PropertyCard({ property }) {
+export default function PropertyCard({ property, onClick, saved = false, onSave }) {
+  const {
+    id,
+    _id,
+    imageUrl,
+    type,
+    price,
+    title,
+    location,
+    bedrooms,
+    bathrooms,
+    areaSqFt
+  } = property;
+
+  const propertyId = _id || id;
+
+  const handleSave = (e) => {
+    e.stopPropagation();
+    if (onSave) onSave(propertyId);
+  };
+
   return (
-    <div className="bg-[var(--color-card)] rounded-lg border border-[var(--color-border)] overflow-hidden shadow-xs hover:shadow-lg transition-shadow duration-300">
-      <div className="relative h-52 overflow-hidden bg-gray-100">
+    <div
+      onClick={onClick}
+      className="group relative bg-white rounded-2xl border border-[#E2DDD4]/60 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer flex flex-col justify-between"
+    >
+      {/* Top Image Section */}
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#18180F]/5">
         <img
-          src={property.imageUrl || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c'}
-          alt={property.title}
-          className="w-full h-full object-cover"
+          src={imageUrl}
+          alt={title}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
         />
-        <div className="absolute top-3 right-3 bg-[var(--color-accent)] text-white text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-xs">
-          <Sparkles className="w-3.5 h-3.5" /> AI Verified
+
+        {/* Gradient Overlay for Price Visibility */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+
+        {/* Property Type Badge */}
+        <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-md text-[#18180F] text-xs font-medium px-3 py-1 rounded-full shadow-sm">
+          {type}
+        </span>
+
+        {/* Favorite Heart Button */}
+        <button
+          onClick={handleSave}
+          className="absolute top-3 right-3 p-2 rounded-full bg-white/90 backdrop-blur-md text-[#18180F] hover:text-[#B8945A] hover:bg-white transition-all shadow-sm"
+          aria-label="Save Property"
+        >
+          <svg
+            className="w-4 h-4"
+            fill={saved ? '#B8945A' : 'none'}
+            stroke={saved ? '#B8945A' : 'currentColor'}
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+            />
+          </svg>
+        </button>
+
+        {/* Price Tag Overlay */}
+        <div className="absolute bottom-3 left-4 text-white">
+          <span className="font-['Fraunces',serif] italic text-xl md:text-2xl font-bold drop-shadow-md">
+            Rs {price} Cr
+          </span>
         </div>
       </div>
 
-      <div className="p-5">
-        <div className="flex items-center gap-1 text-[var(--color-muted-foreground)] text-xs font-medium mb-1">
-          <MapPin className="w-3.5 h-3.5" />
-          <span>{property.location}</span>
-        </div>
-        <h3 className="font-display font-bold text-xl mb-2 text-[var(--color-foreground)] line-clamp-1">{property.title}</h3>
-        <p className="text-[var(--color-muted-foreground)] text-sm mb-4 line-clamp-2">{property.description}</p>
-
-        <div className="flex items-center justify-between text-xs text-[var(--color-muted-foreground)] border-t border-b border-[var(--color-border)] py-2.5 mb-4">
-          <span className="flex items-center gap-1.5"><Bed className="w-4 h-4 text-[var(--color-accent)]" /> {property.bedrooms} Beds</span>
-          <span className="flex items-center gap-1.5"><Bath className="w-4 h-4 text-[var(--color-accent)]" /> {property.bathrooms} Baths</span>
-          <span className="flex items-center gap-1.5"><Square className="w-4 h-4 text-[var(--color-accent)]" /> {property.areaSqFt} sqft</span>
+      {/* Card Content Section */}
+      <div className="p-5 flex-1 flex flex-col justify-between">
+        <div>
+          <h3 className="font-semibold text-[#18180F] text-base leading-snug group-hover:text-[#B8945A] transition-colors line-clamp-1">
+            {title}
+          </h3>
+          <p className="text-xs text-[#7A7568] mt-1 line-clamp-1">
+            {location}
+          </p>
         </div>
 
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="text-xs text-[var(--color-muted-foreground)] block">Price</span>
-            <span className="font-bold text-lg text-[var(--color-accent)]">${Number(property.price).toLocaleString()}</span>
+        {/* Key Specs Footer */}
+        <div className="flex items-center gap-4 text-[#7A7568] text-xs pt-4 mt-4 border-t border-[#E2DDD4]/60">
+          {/* Bedrooms */}
+          <div className="flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75" />
+            </svg>
+            <span>{bedrooms} Beds</span>
           </div>
-          <button className="text-xs font-semibold px-3 py-1.5 border border-[var(--color-border)] rounded-md hover:bg-[var(--color-muted)] transition-colors">
-            View Details
-          </button>
+
+          {/* Bathrooms */}
+          <div className="flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            <span>{bathrooms} Baths</span>
+          </div>
+
+          {/* SqFt Area */}
+          <div className="flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v16.5h16.5" />
+            </svg>
+            <span>{areaSqFt} sqft</span>
+          </div>
         </div>
       </div>
     </div>
