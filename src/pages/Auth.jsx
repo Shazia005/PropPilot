@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import API from '../api';
 
 export default function Auth({ initialMode = 'login', onAuth, onNavigate }) {
   const [mode, setMode] = useState(initialMode);
@@ -8,32 +9,45 @@ export default function Auth({ initialMode = 'login', onAuth, onNavigate }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e) {
+  // Sync mode when Navbar buttons update initialMode
+  useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode]);
+
+  async function handleSubmit(e) {
     e.preventDefault();
     setError('');
-    
-    if (mode === 'signup' && !name.trim()) { 
-      setError('Please enter your name.'); 
-      return; 
-    }
-    if (!email.includes('@')) { 
-      setError('Please enter a valid email.'); 
-      return; 
-    }
-    if (password.length < 6) { 
-      setError('Password must be at least 6 characters.'); 
-      return; 
-    }
+
+    if (mode === 'signup' && !name.trim()) return setError('Please enter your name.');
+    if (!email.includes('@')) return setError('Please enter a valid email.');
+    if (password.length < 6) return setError('Password must be at least 6 characters.');
 
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+
+    try {
+      const endpoint = mode === 'signup' ? '/auth/signup' : '/auth/login';
+      const payload = mode === 'signup' ? { name, email, password } : { email, password };
+      
+      const response = await API.post(endpoint, payload);
+
+      // Extract user object safely
+      const userData = response.data.user || response.data;
+      const token = response.data.token;
+
+      // Persist session
+      if (token) localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(userData));
+
       if (onAuth) {
-        onAuth({ name: name || email.split('@')[0], email });
-      } else {
+        onAuth(userData);
+      } else if (onNavigate) {
         onNavigate('landing');
       }
-    }, 900);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Authentication failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   const switchMode = (newMode) => {
@@ -144,12 +158,18 @@ export default function Auth({ initialMode = 'login', onAuth, onNavigate }) {
 
           <p className="text-center text-sm text-[#7A7568] mt-6">
             {mode === 'login' ? (
-              <>Don't have an account?{' '}
-                <button onClick={() => switchMode('signup')} className="text-[#B8945A] font-medium hover:underline">Sign up</button>
+              <>
+                Don't have an account?{' '}
+                <button onClick={() => switchMode('signup')} className="text-[#B8945A] font-medium hover:underline">
+                  Sign up
+                </button>
               </>
             ) : (
-              <>Already have an account?{' '}
-                <button onClick={() => switchMode('login')} className="text-[#B8945A] font-medium hover:underline">Sign in</button>
+              <>
+                Already have an account?{' '}
+                <button onClick={() => switchMode('login')} className="text-[#B8945A] font-medium hover:underline">
+                  Sign in
+                </button>
               </>
             )}
           </p>

@@ -3,6 +3,11 @@ import { useState } from 'react';
 export default function Nav({ page, user, onNavigate, onLogout }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Fallback checks for nested backend payload objects (user.name vs user.user.name)
+  const name = user?.name || user?.user?.name || 'User';
+  const firstInitial = name.charAt(0).toLowerCase();
+  const displayName = name.split(' ')[0].toLowerCase();
+
   const links = [
     { id: 'landing', label: 'Home' },
     { id: 'properties', label: 'Properties' },
@@ -11,11 +16,11 @@ export default function Nav({ page, user, onNavigate, onLogout }) {
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-[#F7F5F0]/95 backdrop-blur-sm border-b border-[#E2DDD4] font-['Outfit',sans-serif]">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-[#F7F5F0] border-b border-[#E2DDD4] font-['Outfit',sans-serif]">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <button
-          onClick={() => onNavigate('landing')}
+          onClick={() => onNavigate(user ? 'dashboard' : 'landing')}
           className="font-['Fraunces',serif] text-xl font-semibold tracking-tight text-[#18180F] italic"
         >
           Estate<span className="not-italic text-[#B8945A]">AI</span>
@@ -39,21 +44,23 @@ export default function Nav({ page, user, onNavigate, onLogout }) {
         </div>
 
         {/* Auth Buttons / User Menu */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-4">
           {user ? (
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => onNavigate('dashboard')}
-                className="flex items-center gap-2 text-sm text-[#7A7568] hover:text-[#18180F] transition-colors"
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
               >
-                <div className="w-7 h-7 rounded-full bg-[#B8945A] flex items-center justify-center text-white text-xs font-semibold">
-                  {user.name ? user.name[0].toUpperCase() : 'U'}
+                <div className="w-6 h-6 rounded-full bg-[#B8945A] text-white flex items-center justify-center text-xs font-medium lowercase">
+                  {firstInitial}
                 </div>
-                {user.name ? user.name.split(' ')[0] : 'User'}
+                <span className="text-xs text-[#18180F] font-medium lowercase">
+                  {displayName}
+                </span>
               </button>
               <button
                 onClick={onLogout}
-                className="text-sm text-[#7A7568] hover:text-[#18180F] transition-colors"
+                className="text-xs text-[#7A7568] hover:text-[#18180F] transition-colors ml-1"
               >
                 Sign out
               </button>
@@ -62,13 +69,13 @@ export default function Nav({ page, user, onNavigate, onLogout }) {
             <>
               <button
                 onClick={() => onNavigate('login')}
-                className="text-sm font-medium text-[#7A7568] hover:text-[#18180F] transition-colors"
+                className="text-xs font-medium text-[#7A7568] hover:text-[#18180F] transition-colors"
               >
                 Login
               </button>
               <button
                 onClick={() => onNavigate('signup')}
-                className="text-sm font-medium bg-[#18180F] text-[#F7F5F0] px-4 py-2 rounded-md hover:bg-[#2a2a1a] transition-colors"
+                className="text-xs font-medium bg-[#18180F] text-[#F7F5F0] px-4 py-2 rounded-md hover:bg-[#2a2a1a] transition-colors"
               >
                 Sign Up
               </button>
@@ -102,16 +109,26 @@ export default function Nav({ page, user, onNavigate, onLogout }) {
               {link.label}
             </button>
           ))}
-          <div className="flex gap-3 pt-2 border-t border-[#E2DDD4]">
+          <div className="flex items-center gap-3 pt-3 border-t border-[#E2DDD4]">
             {user ? (
               <>
-                <button onClick={() => { onNavigate('dashboard'); setMenuOpen(false); }} className="text-sm font-medium text-[#18180F]">Dashboard</button>
-                <button onClick={() => { onLogout(); setMenuOpen(false); }} className="text-sm text-[#7A7568]">Sign out</button>
+                <button 
+                  onClick={() => { onNavigate('dashboard'); setMenuOpen(false); }}
+                  className="flex items-center gap-2"
+                >
+                  <div className="w-6 h-6 rounded-full bg-[#B8945A] text-white flex items-center justify-center text-xs font-medium lowercase">
+                    {firstInitial}
+                  </div>
+                  <span className="text-xs font-medium text-[#18180F] lowercase">{displayName}</span>
+                </button>
+                <button onClick={() => { onLogout(); setMenuOpen(false); }} className="text-xs text-[#7A7568] ml-auto">
+                  Sign out
+                </button>
               </>
             ) : (
               <>
-                <button onClick={() => { onNavigate('login'); setMenuOpen(false); }} className="text-sm font-medium text-[#7A7568]">Login</button>
-                <button onClick={() => { onNavigate('signup'); setMenuOpen(false); }} className="text-sm font-medium bg-[#18180F] text-[#F7F5F0] px-4 py-2 rounded-md">Sign Up</button>
+                <button onClick={() => { onNavigate('login'); setMenuOpen(false); }} className="text-xs font-medium text-[#7A7568]">Login</button>
+                <button onClick={() => { onNavigate('signup'); setMenuOpen(false); }} className="text-xs font-medium bg-[#18180F] text-[#F7F5F0] px-4 py-2 rounded-md">Sign Up</button>
               </>
             )}
           </div>
