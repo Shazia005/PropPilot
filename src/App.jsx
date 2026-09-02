@@ -96,7 +96,7 @@ export default function App() {
     <div className="min-h-screen bg-[#F7F5F0]">
       <Navbar 
         onNavigate={handleNavigate} 
-        currentPage={currentPage} 
+        page={currentPage} 
         user={user} 
         onLogout={handleLogout} 
       />
@@ -121,13 +121,14 @@ export default function App() {
         </>
       )}
 
-      {currentPage === 'properties' && (
-        <Properties 
-          onNavigate={handleNavigate} 
-          savedIds={savedIds} 
-          onSave={handleSave} 
-        />
-      )}
+{currentPage === 'properties' && (
+  <Properties 
+    onNavigate={handleNavigate} 
+    savedIds={savedIds} 
+    onSave={handleSave}
+    initialQuery={pageData?.search || pageData?.query || ''} 
+  />
+)}
 
       {currentPage === 'property' && (
         <PropertyDetail

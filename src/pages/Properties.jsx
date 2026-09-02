@@ -7,7 +7,7 @@ const CITIES = ['All Cities', 'Islamabad', 'Lahore', 'Karachi'];
 const TYPES = ['All Types', 'House', 'Villa', 'Apartment', 'Penthouse', 'Farmhouse'];
 const SORT_OPTIONS = ['Recommended', 'Price: Low to High', 'Price: High to Low', 'Most Bedrooms'];
 
-export default function Properties({ onNavigate, savedIds = [], onSave }) {
+export default function Properties({ onNavigate, savedIds = [], onSave, initialQuery = '' }) {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [aiSummary, setAiSummary] = useState('');
@@ -73,7 +73,7 @@ export default function Properties({ onNavigate, savedIds = [], onSave }) {
     });
 
   return (
-    <div className="min-h-screen pt-16 bg-[#F7F5F0] font-['Outfit',sans-serif]">
+    <div className="min-h-screen pt-16 bg-[#F7F5F0] font-[#Outfit',sans-serif]">
       {/* Header */}
       <div className="bg-[#18180F] py-16">
         <div className="max-w-7xl mx-auto px-6">
@@ -89,9 +89,12 @@ export default function Properties({ onNavigate, savedIds = [], onSave }) {
 
       <div className="max-w-7xl mx-auto px-6 py-10">
         
-        {/* AI Autonomous Prompt Bar */}
+        {/* AI Autonomous Prompt Bar synced with initialQuery */}
         <div className="mb-10">
-          <AIPromptBar onSearchResults={handleAISearchResults} />
+          <AIPromptBar 
+            initialQuery={initialQuery} 
+            onSearchResults={handleAISearchResults} 
+          />
         </div>
 
         {/* AI Insights Summary Box (Visible after an AI search) */}

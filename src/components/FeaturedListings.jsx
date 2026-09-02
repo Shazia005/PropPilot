@@ -40,6 +40,13 @@ const mockListings = [
 export default function FeaturedListings({ properties = [], savedIds = [], onSave, onNavigate }) {
   const listingsToDisplay = properties.length > 0 ? properties : mockListings;
 
+  const formatPrice = (val) => {
+    if (!val) return 'Contact for Price';
+    if (typeof val === 'number') return `Rs ${val.toLocaleString()}`;
+    if (typeof val === 'string' && !val.toLowerCase().includes('rs')) return `Rs ${val}`;
+    return val;
+  };
+
   return (
     <section id="properties" className="py-20 bg-white font-['Outfit',sans-serif]">
       <div className="max-w-7xl mx-auto px-8">
@@ -56,7 +63,7 @@ export default function FeaturedListings({ properties = [], savedIds = [], onSav
           </div>
           <button 
             onClick={() => onNavigate && onNavigate('properties')}
-            className="text-xs font-semibold text-[#18180F] underline underline-offset-4 hover:text-[#B8945A] transition-colors"
+            className="text-xs font-semibold text-[#18180F] underline underline-offset-4 hover:text-[#B8945A] transition-colors cursor-pointer"
           >
             View all listings
           </button>
@@ -77,11 +84,11 @@ export default function FeaturedListings({ properties = [], savedIds = [], onSav
                 <div className="relative h-64 overflow-hidden">
                   <img
                     src={item.imageUrl || item.image}
-                    alt={item.title}
+                    alt={item.title || 'Property'}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <span className="absolute top-4 left-4 bg-white/80 backdrop-blur-md text-[#18180F] text-[10px] font-bold px-3 py-1 rounded-full uppercase">
-                    {item.tag || 'Featured'}
+                    {item.type || item.tag || 'Featured'}
                   </span>
                   <button 
                     onClick={(e) => {
@@ -95,7 +102,7 @@ export default function FeaturedListings({ properties = [], savedIds = [], onSav
                     <Heart className="w-4 h-4" fill={isSaved ? 'currentColor' : 'none'} />
                   </button>
                   <div className="absolute bottom-4 left-4 font-['Fraunces',serif] text-xl font-bold italic text-white drop-shadow-md">
-                    {item.price ? (typeof item.price === 'number' ? `Rs ${item.price.toLocaleString()}` : item.price) : 'Contact for Price'}
+                    {formatPrice(item.price)}
                   </div>
                 </div>
 
@@ -104,9 +111,9 @@ export default function FeaturedListings({ properties = [], savedIds = [], onSav
                   <p className="text-xs text-[#7A7568] mb-4">{item.location}</p>
 
                   <div className="flex items-center gap-4 text-xs text-[#7A7568] pt-3 border-t border-[#E2DDD4]">
-                    <span className="flex items-center gap-1.5"><Bed className="w-3.5 h-3.5 text-[#B8945A]" /> {item.bedrooms || item.beds} Beds</span>
-                    <span className="flex items-center gap-1.5"><Bath className="w-3.5 h-3.5 text-[#B8945A]" /> {item.bathrooms || item.baths} Baths</span>
-                    <span className="flex items-center gap-1.5"><Square className="w-3.5 h-3.5 text-[#B8945A]" /> {item.areaSqFt || item.sqft} sqft</span>
+                    <span className="flex items-center gap-1.5"><Bed className="w-3.5 h-3.5 text-[#B8945A]" /> {item.bedrooms || item.beds || 0} Beds</span>
+                    <span className="flex items-center gap-1.5"><Bath className="w-3.5 h-3.5 text-[#B8945A]" /> {item.bathrooms || item.baths || 0} Baths</span>
+                    <span className="flex items-center gap-1.5"><Square className="w-3.5 h-3.5 text-[#B8945A]" /> {item.areaSqFt || item.sqft || item.area || 'N/A'}</span>
                   </div>
                 </div>
               </div>

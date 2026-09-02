@@ -1,20 +1,38 @@
 import React from 'react';
 
-export default function PropertyCard({ property, onClick, saved = false, onSave }) {
+export default function PropertyCard({ property = {}, onClick, saved = false, onSave }) {
   const {
     id,
     _id,
     imageUrl,
+    image,
     type,
+    tag,
     price,
     title,
     location,
     bedrooms,
+    beds,
     bathrooms,
-    areaSqFt
+    baths,
+    areaSqFt,
+    sqft,
+    area
   } = property;
 
   const propertyId = _id || id;
+  const displayImage = imageUrl || image || 'https://via.placeholder.com/400x300?text=No+Image';
+  const displayType = type || tag || 'Property';
+  const displayBeds = bedrooms ?? beds ?? 0;
+  const displayBaths = bathrooms ?? baths ?? 0;
+  const displaySqFt = areaSqFt || sqft || area || 'N/A';
+
+  const formatPrice = (val) => {
+    if (!val) return 'Contact for Price';
+    if (typeof val === 'number') return `Rs ${val.toLocaleString()}`;
+    if (typeof val === 'string' && !val.toLowerCase().includes('rs')) return `Rs ${val}`;
+    return val;
+  };
 
   const handleSave = (e) => {
     e.stopPropagation();
@@ -29,8 +47,8 @@ export default function PropertyCard({ property, onClick, saved = false, onSave 
       {/* Top Image Section */}
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#18180F]/5">
         <img
-          src={imageUrl}
-          alt={title}
+          src={displayImage}
+          alt={title || 'Property'}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
         />
 
@@ -39,7 +57,7 @@ export default function PropertyCard({ property, onClick, saved = false, onSave 
 
         {/* Property Type Badge */}
         <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-md text-[#18180F] text-xs font-medium px-3 py-1 rounded-full shadow-sm">
-          {type}
+          {displayType}
         </span>
 
         {/* Favorite Heart Button */}
@@ -66,7 +84,7 @@ export default function PropertyCard({ property, onClick, saved = false, onSave 
         {/* Price Tag Overlay */}
         <div className="absolute bottom-3 left-4 text-white">
           <span className="font-['Fraunces',serif] italic text-xl md:text-2xl font-bold drop-shadow-md">
-            Rs {price} Cr
+            {formatPrice(price)}
           </span>
         </div>
       </div>
@@ -75,10 +93,10 @@ export default function PropertyCard({ property, onClick, saved = false, onSave 
       <div className="p-5 flex-1 flex flex-col justify-between">
         <div>
           <h3 className="font-semibold text-[#18180F] text-base leading-snug group-hover:text-[#B8945A] transition-colors line-clamp-1">
-            {title}
+            {title || 'Untitled Property'}
           </h3>
           <p className="text-xs text-[#7A7568] mt-1 line-clamp-1">
-            {location}
+            {location || 'Location upon request'}
           </p>
         </div>
 
@@ -89,7 +107,7 @@ export default function PropertyCard({ property, onClick, saved = false, onSave 
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75" />
             </svg>
-            <span>{bedrooms} Beds</span>
+            <span>{displayBeds} Beds</span>
           </div>
 
           {/* Bathrooms */}
@@ -97,15 +115,15 @@ export default function PropertyCard({ property, onClick, saved = false, onSave 
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
-            <span>{bathrooms} Baths</span>
+            <span>{displayBaths} Baths</span>
           </div>
 
-          {/* SqFt Area */}
+          {/* SqFt / Area */}
           <div className="flex items-center gap-1.5">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v16.5h16.5" />
             </svg>
-            <span>{areaSqFt} sqft</span>
+            <span>{displaySqFt}</span>
           </div>
         </div>
       </div>

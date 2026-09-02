@@ -1,13 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import API from '../api';
 
 export default function ContactAgentModal({ property, user, isOpen, onClose }) {
   const [formData, setFormData] = useState({
-    name: user?.name || user?.user?.name || '',
-    email: user?.email || user?.user?.email || '',
+    name: '',
+    email: '',
     phone: '',
-    message: `Hi, I am interested in ${property?.title || 'this property'}. Please send me more details.`,
+    message: '',
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        name: user?.name || user?.user?.name || '',
+        email: user?.email || user?.user?.email || '',
+        phone: '',
+        message: `Hi, I am interested in ${property?.title || 'this property'}. Please send me more details.`,
+      });
+      setError('');
+      setSuccess(false);
+    }
+  }, [isOpen, user, property]);
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -22,7 +35,7 @@ export default function ContactAgentModal({ property, user, isOpen, onClose }) {
 
     try {
       await API.post('/inquiries', {
-        propertyId: property._id || property.id,
+        propertyId: property?._id || property?.id,
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
@@ -33,7 +46,7 @@ export default function ContactAgentModal({ property, user, isOpen, onClose }) {
       setSuccess(true);
       setTimeout(() => {
         setSuccess(false);
-        onClose();
+        if (onClose) onClose();
       }, 2000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to send inquiry. Please try again.');
@@ -48,7 +61,7 @@ export default function ContactAgentModal({ property, user, isOpen, onClose }) {
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-black text-xl font-bold"
+          className="absolute top-4 right-4 text-gray-400 hover:text-black text-xl font-bold cursor-pointer"
         >
           ✕
         </button>
@@ -120,7 +133,7 @@ export default function ContactAgentModal({ property, user, isOpen, onClose }) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#18180F] text-white text-xs font-medium py-3 rounded-xl hover:bg-[#2a2a1a] transition-colors disabled:opacity-50"
+              className="w-full bg-[#18180F] text-white text-xs font-medium py-3 rounded-xl hover:bg-[#2a2a1a] transition-colors disabled:opacity-50 cursor-pointer"
             >
               {loading ? 'Sending Message...' : 'Send Inquiry'}
             </button>
