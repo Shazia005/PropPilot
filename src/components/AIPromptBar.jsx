@@ -1,24 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import API from '../api';
 
 export default function AIPromptBar({ onSearchResults, setLoading: setParentLoading, initialQuery = '' }) {
   const [prompt, setPrompt] = useState(initialQuery);
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
+  
+  const timer1Ref = useRef(null);
+  const timer2Ref = useRef(null);
 
-  // Extracted search logic so it can be called automatically or manually
+  const clearTimers = () => {
+    if (timer1Ref.current) clearTimeout(timer1Ref.current);
+    if (timer2Ref.current) clearTimeout(timer2Ref.current);
+  };
+
   const executeSearch = async (searchPrompt) => {
-    if (!searchPrompt.trim()) return;
+    const trimmed = searchPrompt.trim();
+    if (!trimmed) return;
 
+    clearTimers();
     setLoading(true);
     if (setParentLoading) setParentLoading(true);
     setStatusMessage('🤖 Extracting search intent...');
 
-    const timer1 = setTimeout(() => setStatusMessage('🌐 Agent searching live property portals...'), 1200);
-    const timer2 = setTimeout(() => setStatusMessage('✨ Normalizing properties to match your budget...'), 2800);
+    timer1Ref.current = setTimeout(() => setStatusMessage('🌐 Agent searching live property portals...'), 1200);
+    timer2Ref.current = setTimeout(() => setStatusMessage('✨ Normalizing properties to match your budget...'), 2800);
 
     try {
-      const res = await API.post('/ai/agent-search', { prompt: searchPrompt });
+      const res = await API.post('/ai/agent-search', { prompt: trimmed });
       if (onSearchResults) {
         onSearchResults(res.data);
       }
@@ -26,21 +35,19 @@ export default function AIPromptBar({ onSearchResults, setLoading: setParentLoad
       console.error('LLM search error:', err);
       alert('Search failed. Please check your backend connection and API key settings.');
     } finally {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
+      clearTimers();
       setLoading(false);
       if (setParentLoading) setParentLoading(false);
       setStatusMessage('');
     }
   };
 
-  // Automatically run search when arriving from Home page with a query
   useEffect(() => {
     if (initialQuery) {
       setPrompt(initialQuery);
       executeSearch(initialQuery);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => clearTimers();
   }, [initialQuery]);
 
   const handleSubmit = (e) => {

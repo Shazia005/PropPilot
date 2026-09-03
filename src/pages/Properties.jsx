@@ -73,7 +73,7 @@ export default function Properties({ onNavigate, savedIds = [], onSave, initialQ
     });
 
   return (
-    <div className="min-h-screen pt-16 bg-[#F7F5F0] font-[#Outfit',sans-serif]">
+    <div className="min-h-screen pt-16 bg-[#F7F5F0] font-['Outfit',sans-serif]">
       {/* Header */}
       <div className="bg-[#18180F] py-16">
         <div className="max-w-7xl mx-auto px-6">

@@ -9,7 +9,11 @@ export default function PropertyDetail({ propertyId, user, onNavigate, savedIds 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [visitScheduled, setVisitScheduled] = useState(false);
 
-  // Fetch individual property from Express API
+  // Property AI Chat State
+  const [chatQuestion, setChatQuestion] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatHistory, setChatHistory] = useState([]);
+
   useEffect(() => {
     if (propertyId) {
       setLoading(true);
@@ -26,7 +30,36 @@ export default function PropertyDetail({ propertyId, user, onNavigate, savedIds 
     setActiveImage(0);
     setIsModalOpen(false);
     setVisitScheduled(false);
+    setChatHistory([]);
+    setChatQuestion('');
   }, [propertyId]);
+
+  const handleChatSubmit = async (e) => {
+    e.preventDefault();
+    if (!chatQuestion.trim() || chatLoading) return;
+
+    const userMsg = chatQuestion.trim();
+    setChatQuestion('');
+    setChatHistory((prev) => [...prev, { role: 'user', text: userMsg }]);
+    setChatLoading(true);
+
+    try {
+      const res = await API.post('/ai/property-chat', {
+        property,
+        userQuestion: userMsg,
+      });
+
+      setChatHistory((prev) => [...prev, { role: 'assistant', text: res.data.answer }]);
+    } catch (err) {
+      console.error('Property chat error:', err);
+      setChatHistory((prev) => [
+        ...prev,
+        { role: 'assistant', text: 'Sorry, I failed to process your question. Please try again.' },
+      ]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -170,8 +203,8 @@ export default function PropertyDetail({ propertyId, user, onNavigate, savedIds 
 
           {/* Right: Sidebar */}
           <div className="space-y-5">
-            <div className="bg-white rounded-2xl border border-[#E2DDD4] p-6 sticky top-24">
-              <div className="text-center mb-6">
+            <div className="bg-white rounded-2xl border border-[#E2DDD4] p-6 sticky top-24 space-y-6">
+              <div className="text-center">
                 <p className="font-['Fraunces',serif] text-4xl font-semibold text-[#18180F] italic">
                   {typeof property.price === 'number' ? `₨ ${property.price} Cr` : property.price}
                 </p>
@@ -180,29 +213,28 @@ export default function PropertyDetail({ propertyId, user, onNavigate, savedIds 
                 </p>
               </div>
 
-              <div className="flex gap-3 mb-6">
-                {/* Contact Agent triggers the Modal */}
+              <div className="flex gap-3">
                 <button
                   onClick={() => setIsModalOpen(true)}
-                  className="flex-1 bg-[#18180F] hover:bg-[#2a2a1a] text-white font-medium text-sm py-3 rounded-lg transition-colors"
+                  className="flex-1 bg-[#18180F] hover:bg-[#2a2a1a] text-white font-medium text-sm py-3 rounded-lg transition-colors cursor-pointer"
                 >
                   Contact Agent
                 </button>
                 <button
                   onClick={() => setVisitScheduled(true)}
-                  className="flex-1 border border-[#E2DDD4] hover:border-[#B8945A] text-[#18180F] font-medium text-sm py-3 rounded-lg transition-colors"
+                  className="flex-1 border border-[#E2DDD4] hover:border-[#B8945A] text-[#18180F] font-medium text-sm py-3 rounded-lg transition-colors cursor-pointer"
                 >
                   {visitScheduled ? '✓ Scheduled' : 'Schedule Visit'}
                 </button>
               </div>
 
               {visitScheduled && (
-                <div className="mb-4 bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-center">
+                <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-center">
                   <p className="text-green-700 text-xs font-medium">Visit request sent! Agent will contact you within 24 hours.</p>
                 </div>
               )}
 
-              <div className="flex items-center gap-3 p-3 bg-[#F7F5F0] rounded-xl mb-4">
+              <div className="flex items-center gap-3 p-3 bg-[#F7F5F0] rounded-xl">
                 <img
                   src={agent.image}
                   alt={agent.name}
@@ -214,9 +246,56 @@ export default function PropertyDetail({ propertyId, user, onNavigate, savedIds 
                 </div>
               </div>
 
+              {/* AI Property Assistant Chat Drawer */}
+              <div className="border-t border-[#EDEAE2] pt-5">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-[#B8945A] mb-2 flex items-center gap-1.5">
+                  🤖 Ask AI About This Listing
+                </h4>
+                
+                <div className="max-h-48 overflow-y-auto space-y-2 mb-3 pr-1 text-xs">
+                  {chatHistory.length === 0 && (
+                    <p className="text-[#7A7568] italic text-[11px]">
+                      Ask questions like "Is this price negotiable?" or "What are the nearest schools?"
+                    </p>
+                  )}
+                  {chatHistory.map((msg, idx) => (
+                    <div
+                      key={idx}
+                      className={`p-2.5 rounded-xl ${
+                        msg.role === 'user'
+                          ? 'bg-[#18180F] text-white ml-4'
+                          : 'bg-[#F7F5F0] text-[#18180F] border border-[#E2DDD4] mr-4'
+                      }`}
+                    >
+                      {msg.text}
+                    </div>
+                  ))}
+                  {chatLoading && (
+                    <p className="text-[#B8945A] text-[11px] animate-pulse">AI is typing response...</p>
+                  )}
+                </div>
+
+                <form onSubmit={handleChatSubmit} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={chatQuestion}
+                    onChange={(e) => setChatQuestion(e.target.value)}
+                    placeholder="Ask a question..."
+                    className="flex-1 px-3 py-2 bg-[#F7F5F0] border border-[#E2DDD4] rounded-lg text-xs outline-none focus:border-[#B8945A]"
+                  />
+                  <button
+                    type="submit"
+                    disabled={chatLoading}
+                    className="px-3 py-2 bg-[#B8945A] text-white rounded-lg text-xs font-medium hover:bg-[#a07d4a] transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    Ask
+                  </button>
+                </form>
+              </div>
+
               <button
                 onClick={() => onSave(propId)}
-                className="w-full flex items-center justify-center gap-2 border border-[#E2DDD4] hover:border-[#B8945A] text-sm text-[#7A7568] hover:text-[#B8945A] py-3 rounded-lg transition-colors"
+                className="w-full flex items-center justify-center gap-2 border border-[#E2DDD4] hover:border-[#B8945A] text-sm text-[#7A7568] hover:text-[#B8945A] py-3 rounded-lg transition-colors cursor-pointer"
               >
                 {isSaved ? (
                   <>

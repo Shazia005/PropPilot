@@ -2,13 +2,20 @@ import React, { useState } from 'react';
 import AIPromptBar from '../components/AIPromptBar';
 import PropertyCard from '../components/PropertyCard';
 
-export default function AIAssistant({ onNavigate, savedIds = [], onToggleSave }) {
+export default function AIAssistant({ onNavigate, savedIds = [], onSave, initialQuery = '' }) {
   const [searchResults, setSearchResults] = useState([]);
+  const [aiSummary, setAiSummary] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleResults = (results) => {
-    setSearchResults(results);
+  const handleResults = (data) => {
+    if (Array.isArray(data)) {
+      setSearchResults(data);
+      setAiSummary('');
+    } else if (data && typeof data === 'object') {
+      setSearchResults(data.properties || []);
+      setAiSummary(data.aiSummary || '');
+    }
     setHasSearched(true);
   };
 
@@ -29,7 +36,11 @@ export default function AIAssistant({ onNavigate, savedIds = [], onToggleSave })
         </div>
 
         {/* Embedded AI Prompt Bar Component */}
-        <AIPromptBar onSearchResults={handleResults} setLoading={setLoading} />
+        <AIPromptBar 
+          initialQuery={initialQuery}
+          onSearchResults={handleResults} 
+          setLoading={setLoading} 
+        />
 
         {/* Live Search Results Displayed Right Here */}
         <div className="mt-12">
@@ -46,6 +57,16 @@ export default function AIAssistant({ onNavigate, savedIds = [], onToggleSave })
 
           {!loading && searchResults.length > 0 && (
             <div>
+              {/* AI Summary Banner */}
+              {aiSummary && (
+                <div className="bg-[#18180F] text-white p-5 rounded-2xl mb-8 shadow-sm border border-[#B8945A]/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-[#B8945A]">✨ AI Assistant Summary</span>
+                  </div>
+                  <p className="text-sm text-[#EDEAE2] leading-relaxed">{aiSummary}</p>
+                </div>
+              )}
+
               <h2 className="font-['Fraunces',serif] text-2xl font-semibold text-[#18180F] italic mb-6">
                 Found Matches ({searchResults.length})
               </h2>
@@ -54,8 +75,8 @@ export default function AIAssistant({ onNavigate, savedIds = [], onToggleSave })
                   <PropertyCard
                     key={property._id || property.id}
                     property={property}
-                    isSaved={savedIds.includes(property._id || property.id)}
-                    onToggleSave={() => onToggleSave && onToggleSave(property._id || property.id)}
+                    saved={savedIds.includes(property._id || property.id)}
+                    onSave={onSave}
                     onClick={() => onNavigate && onNavigate('property', { id: property._id || property.id })}
                   />
                 ))}

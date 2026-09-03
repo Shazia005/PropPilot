@@ -121,19 +121,20 @@ export default function App() {
         </>
       )}
 
-{currentPage === 'properties' && (
-  <Properties 
-    onNavigate={handleNavigate} 
-    savedIds={savedIds} 
-    onSave={handleSave}
-    initialQuery={pageData?.search || pageData?.query || ''} 
-  />
-)}
+      {currentPage === 'properties' && (
+        <Properties 
+          onNavigate={handleNavigate} 
+          savedIds={savedIds} 
+          onSave={handleSave}
+          initialQuery={pageData?.search || pageData?.query || ''} 
+        />
+      )}
 
       {currentPage === 'property' && (
         <PropertyDetail
           key={pageData?.id}
           propertyId={pageData?.id}
+          pageData={pageData}
           user={user}
           onNavigate={handleNavigate}
           savedIds={savedIds}

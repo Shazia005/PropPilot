@@ -25,7 +25,7 @@ export default function Auth({ initialMode = 'login', onAuth, onNavigate }) {
     setLoading(true);
 
     try {
-      const endpoint = mode === 'signup' ? '/auth/signup' : '/auth/login';
+      const endpoint = mode === 'signup' ? '/auth/register' : '/auth/login';
       const payload = mode === 'signup' ? { name, email, password } : { email, password };
       
       const response = await API.post(endpoint, payload);
@@ -44,7 +44,11 @@ export default function Auth({ initialMode = 'login', onAuth, onNavigate }) {
         onNavigate('landing');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Authentication failed. Please try again.');
+      setError(
+        err.response?.data?.error || 
+        err.response?.data?.message || 
+        'Authentication failed. Please check your credentials or connection.'
+      );
     } finally {
       setLoading(false);
     }
@@ -59,7 +63,7 @@ export default function Auth({ initialMode = 'login', onAuth, onNavigate }) {
   };
 
   return (
-    <div className="min-h-screen pt-16 flex">
+    <div className="min-h-screen pt-16 flex font-['Outfit',sans-serif]">
       {/* Left Image Panel */}
       <div className="hidden lg:flex w-1/2 relative">
         <img

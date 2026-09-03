@@ -9,6 +9,10 @@ export default function ContactAgentModal({ property, user, isOpen, onClose }) {
     message: '',
   });
 
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
+
   useEffect(() => {
     if (isOpen) {
       setFormData({
@@ -21,10 +25,6 @@ export default function ContactAgentModal({ property, user, isOpen, onClose }) {
       setSuccess(false);
     }
   }, [isOpen, user, property]);
-
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
@@ -58,7 +58,6 @@ export default function ContactAgentModal({ property, user, isOpen, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 font-['Outfit',sans-serif]">
       <div className="bg-white border border-[#E2DDD4] rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
-        {/* Close Button */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-black text-xl font-bold cursor-pointer"
