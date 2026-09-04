@@ -1,6 +1,42 @@
 import React from 'react';
 
-export default function PropertyCard({ property = {}, onClick, saved = false, onSave }) {
+// Local fallback image — does not depend on any external website
+const FALLBACK_IMAGE =
+  'data:image/svg+xml;charset=UTF-8,' +
+  encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+      <rect width="800" height="600" fill="#EDEAE2"/>
+      <text
+        x="400"
+        y="285"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        fill="#7A7568"
+        font-family="Arial, sans-serif"
+        font-size="28"
+      >
+        No Image Available
+      </text>
+      <text
+        x="400"
+        y="325"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        fill="#A49D91"
+        font-family="Arial, sans-serif"
+        font-size="16"
+      >
+        Estate AI
+      </text>
+    </svg>
+  `);
+
+export default function PropertyCard({
+  property = {},
+  onClick,
+  saved = false,
+  onSave,
+}) {
   const {
     id,
     _id,
@@ -17,26 +53,51 @@ export default function PropertyCard({ property = {}, onClick, saved = false, on
     baths,
     areaSqFt,
     sqft,
-    area
+    area,
   } = property;
 
   const propertyId = _id || id;
-  const displayImage = imageUrl || image || 'https://via.placeholder.com/400x300?text=No+Image';
+
+  const displayImage = imageUrl || image || FALLBACK_IMAGE;
+
   const displayType = type || tag || 'Property';
+
   const displayBeds = bedrooms ?? beds ?? 0;
+
   const displayBaths = bathrooms ?? baths ?? 0;
+
   const displaySqFt = areaSqFt || sqft || area || 'N/A';
 
   const formatPrice = (val) => {
     if (!val) return 'Contact for Price';
-    if (typeof val === 'number') return `Rs ${val.toLocaleString()}`;
-    if (typeof val === 'string' && !val.toLowerCase().includes('rs')) return `Rs ${val}`;
+
+    if (typeof val === 'number') {
+      return `Rs ${val.toLocaleString()}`;
+    }
+
+    if (
+      typeof val === 'string' &&
+      !val.toLowerCase().includes('rs')
+    ) {
+      return `Rs ${val}`;
+    }
+
     return val;
   };
 
   const handleSave = (e) => {
     e.stopPropagation();
-    if (onSave) onSave(propertyId);
+
+    if (onSave) {
+      onSave(propertyId);
+    }
+  };
+
+  const handleImageError = (e) => {
+    // Prevent an infinite loop if the image itself fails
+    if (e.currentTarget.src !== FALLBACK_IMAGE) {
+      e.currentTarget.src = FALLBACK_IMAGE;
+    }
   };
 
   return (
@@ -49,10 +110,11 @@ export default function PropertyCard({ property = {}, onClick, saved = false, on
         <img
           src={displayImage}
           alt={title || 'Property'}
+          onError={handleImageError}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
         />
 
-        {/* Gradient Overlay for Price Visibility */}
+        {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
 
         {/* Property Type Badge */}
@@ -81,7 +143,7 @@ export default function PropertyCard({ property = {}, onClick, saved = false, on
           </svg>
         </button>
 
-        {/* Price Tag Overlay */}
+        {/* Price Tag */}
         <div className="absolute bottom-3 left-4 text-white">
           <span className="font-['Fraunces',serif] italic text-xl md:text-2xl font-bold drop-shadow-md">
             {formatPrice(price)}
@@ -95,6 +157,7 @@ export default function PropertyCard({ property = {}, onClick, saved = false, on
           <h3 className="font-semibold text-[#18180F] text-base leading-snug group-hover:text-[#B8945A] transition-colors line-clamp-1">
             {title || 'Untitled Property'}
           </h3>
+
           <p className="text-xs text-[#7A7568] mt-1 line-clamp-1">
             {location || 'Location upon request'}
           </p>
@@ -104,25 +167,58 @@ export default function PropertyCard({ property = {}, onClick, saved = false, on
         <div className="flex items-center gap-4 text-[#7A7568] text-xs pt-4 mt-4 border-t border-[#E2DDD4]/60">
           {/* Bedrooms */}
           <div className="flex items-center gap-1.5">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75" />
+            <svg
+              className="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75"
+              />
             </svg>
+
             <span>{displayBeds} Beds</span>
           </div>
 
           {/* Bathrooms */}
           <div className="flex items-center gap-1.5">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            <svg
+              className="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
             </svg>
+
             <span>{displayBaths} Baths</span>
           </div>
 
-          {/* SqFt / Area */}
+          {/* Area */}
           <div className="flex items-center gap-1.5">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v16.5h16.5" />
+            <svg
+              className="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3.75 3.75v16.5h16.5"
+              />
             </svg>
+
             <span>{displaySqFt}</span>
           </div>
         </div>
