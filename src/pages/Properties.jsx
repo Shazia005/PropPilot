@@ -558,6 +558,7 @@ export default function Properties({
                         'property',
                         {
                           id: propertyId,
+                          property,
                         }
                       );
                     }

@@ -56,8 +56,7 @@ export default function PropertyCard({
     area,
   } = property;
 
-  const propertyId = _id || id;
-
+const propertyId = _id || id || property.sourceUrl;
   const displayImage = imageUrl || image || FALLBACK_IMAGE;
 
   const displayType = type || tag || 'Property';
@@ -89,8 +88,7 @@ export default function PropertyCard({
     e.stopPropagation();
 
     if (onSave) {
-      onSave(propertyId);
-    }
+onSave(propertyId, property);    }
   };
 
   const handleImageError = (e) => {
