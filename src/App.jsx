@@ -44,6 +44,35 @@ export default function App() {
   const [savedProperties, setSavedProperties] = useState([]);
 
   // =========================================================
+  // AI SEARCH STATE (persists across navigation)
+  // =========================================================
+
+  const [aiProperties, setAiProperties] = useState([]);
+  const [aiSummary, setAiSummary] = useState('');
+  const [isAISearch, setIsAISearch] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  // =========================================================
+  // AI SEARCH STATE (preserved across navigation)
+  // =========================================================
+
+  const [aiSearchState, setAiSearchState] = useState({
+    properties: [],
+    aiSummary: '',
+    isAISearch: false,
+    lastQuery: '',
+  });
+
+  // =========================================================
+  // AI SEARCH STATE (persists across navigation)
+  // =========================================================
+
+  const [aiProperties, setAiProperties] = useState([]);
+  const [aiSummary, setAiSummary] = useState('');
+  const [isAISearch, setIsAISearch] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  // =========================================================
   // LOAD SAVED PROPERTIES
   // =========================================================
 
@@ -92,6 +121,72 @@ export default function App() {
     setPageData(data);
 
     window.scrollTo(0, 0);
+  };
+
+  // =========================================================
+  // AI SEARCH HANDLERS
+  // =========================================================
+
+  const handleAISearchResults = (data) => {
+    if (!data || !Array.isArray(data.properties)) {
+      return;
+    }
+
+    const usedIds = new Set();
+
+    const normalizedProperties = data.properties.map(
+      (property, index) => {
+        const originalId =
+          property.id ||
+          property._id ||
+          property.sourceUrl ||
+          `ai-property-${Date.now()}-${index}`;
+
+        let uniqueId = String(originalId);
+        let counter = 1;
+
+        while (usedIds.has(uniqueId)) {
+          uniqueId = `${String(originalId)}-${counter}`;
+          counter += 1;
+        }
+
+        usedIds.add(uniqueId);
+
+        return {
+          ...property,
+          id: uniqueId,
+          _id: property._id || undefined,
+          title: property.title || property.rawTitle || 'Property Listing',
+          location: property.location || property.city || 'Location unavailable',
+          city: property.city || '',
+          type: property.type || property.propertyType || 'House',
+          bedrooms: Number(property.bedrooms ?? property.beds ?? 0),
+          bathrooms: Number(property.bathrooms ?? property.baths ?? 0),
+          area: property.area || property.areaSqFt || 'N/A',
+          image: property.image || property.imageUrl || '',
+          imageUrl: property.imageUrl || property.image || '',
+          sourceUrl: property.sourceUrl || property.rawLink || property.link || '',
+        };
+      }
+    );
+
+    setAiProperties(normalizedProperties);
+    setAiSummary(data.searchSummary || data.aiSummary || '');
+    setIsAISearch(true);
+  };
+
+  const clearAISearch = () => {
+    setIsAISearch(false);
+    setAiSummary('');
+    setAiProperties([]);
+  };
+
+  // =========================================================
+  // UPDATE AI SEARCH STATE (called from Properties)
+  // =========================================================
+
+  const handleAISearchUpdate = (searchState) => {
+    setAiSearchState(searchState);
   };
 
   // =========================================================
@@ -358,6 +453,14 @@ export default function App() {
             pageData?.query ||
             ''
           }
+          aiProperties={aiProperties}
+          setAiProperties={setAiProperties}
+          aiSummary={aiSummary}
+          setAiSummary={setAiSummary}
+          isAISearch={isAISearch}
+          setIsAISearch={setIsAISearch}
+          aiLoading={aiLoading}
+          setAiLoading={setAiLoading}
         />
       )}
 

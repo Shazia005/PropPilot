@@ -33,10 +33,21 @@ export default function Properties({
   savedIds = [],
   onSave,
   initialQuery = '',
+  aiProperties = [],
+  setAiProperties,
+  aiSummary = '',
+  setAiSummary,
+  isAISearch = false,
+  setIsAISearch,
+  aiLoading = false,
+  setAiLoading,
 }) {
-  const [properties, setProperties] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [aiSummary, setAiSummary] = useState('');
+  const [properties, setProperties] = useState(
+    isAISearch && aiProperties.length > 0 ? aiProperties : []
+  );
+  const [loading, setLoading] = useState(
+    !(isAISearch && aiProperties.length > 0)
+  );
 
   const [city, setCity] = useState('All Cities');
   const [type, setType] = useState('All Types');
@@ -45,8 +56,17 @@ export default function Properties({
   const [sort, setSort] = useState('Recommended');
   const [search, setSearch] = useState('');
 
-  // Load normal database properties
+  // -----------------------------------------------------------
+  // Load normal database properties (skip if AI results exist)
+  // -----------------------------------------------------------
+
   useEffect(() => {
+    if (isAISearch && aiProperties.length > 0) {
+      setProperties(aiProperties);
+      setLoading(false);
+      return;
+    }
+
     const fetchProperties = async () => {
       try {
         const res = await API.get('/properties');
@@ -59,7 +79,11 @@ export default function Properties({
           setProperties([]);
         }
       } catch (err) {
-        console.error('Failed to fetch properties:', err);
+        console.error(
+          'Failed to fetch properties:',
+          err
+        );
+
         setProperties([]);
       } finally {
         setLoading(false);
@@ -69,120 +93,224 @@ export default function Properties({
     fetchProperties();
   }, []);
 
+  // -----------------------------------------------------------
   // Handle AI search results
+  // -----------------------------------------------------------
+
   const handleAISearchResults = (data) => {
-    if (!data || !Array.isArray(data.properties)) {
-      console.error('Invalid AI search response:', data);
+    console.log(
+      '[Properties] AI Search Response:',
+      data
+    );
+
+    if (
+      !data ||
+      !Array.isArray(data.properties)
+    ) {
+      console.error(
+        '[Properties] Invalid AI search response:',
+        data
+      );
       return;
     }
 
     const usedIds = new Set();
 
-    const normalizedProperties = data.properties.map((property, index) => {
-      const originalId =
-        property.id ||
-        property._id ||
-        `ai-property-${Date.now()}-${index}`;
+    const normalizedProperties =
+      data.properties.map(
+        (property, index) => {
+          const originalId =
+            property.id ||
+            property._id ||
+            property.sourceUrl ||
+            `ai-property-${Date.now()}-${index}`;
 
-      let uniqueId = String(originalId);
-      let counter = 1;
+          let uniqueId =
+            String(originalId);
 
-      while (usedIds.has(uniqueId)) {
-        uniqueId = `${String(originalId)}-${counter}`;
-        counter += 1;
-      }
+          let counter = 1;
 
-      usedIds.add(uniqueId);
+          while (
+            usedIds.has(uniqueId)
+          ) {
+            uniqueId =
+              `${String(originalId)}-${counter}`;
 
-      return {
-        ...property,
+            counter += 1;
+          }
 
-        // Guaranteed unique ID
-        id: uniqueId,
+          usedIds.add(uniqueId);
 
-        // Support both backend DB properties and AI properties
-        _id: property._id || undefined,
+          return {
+            ...property,
 
-        title:
-          property.title ||
-          property.rawTitle ||
-          'Property Listing',
+            id: uniqueId,
 
-        location:
-          property.location ||
-          property.city ||
-          'Location unavailable',
+            _id:
+              property._id ||
+              undefined,
 
-        city:
-          property.city ||
-          extractCity(property.location),
+            title:
+              property.title ||
+              property.rawTitle ||
+              'Property Listing',
 
-        type:
-          property.type ||
-          property.propertyType ||
-          'House',
+            location:
+              property.location ||
+              property.city ||
+              'Location unavailable',
 
-        bedrooms: Number(
-          property.bedrooms ??
-            property.beds ??
-            0
-        ),
+            city:
+              property.city ||
+              extractCity(
+                property.location
+              ),
 
-        bathrooms: Number(
-          property.bathrooms ??
-            property.baths ??
-            0
-        ),
+            type:
+              property.type ||
+              property.propertyType ||
+              'House',
 
-        area:
-          property.area ||
-          property.areaSqFt ||
-          'N/A',
+            bedrooms: Number(
+              property.bedrooms ??
+                property.beds ??
+                property.rawBedrooms ??
+                0
+            ),
 
-        image:
-          property.image ||
-          property.imageUrl ||
-          '',
-      };
-    });
+            bathrooms: Number(
+              property.bathrooms ??
+                property.baths ??
+                property.rawBathrooms ??
+                0
+            ),
 
+            area:
+              property.area ||
+              property.areaSqFt ||
+              property.rawArea ||
+              'N/A',
+
+            image:
+              property.image ||
+              property.imageUrl ||
+              property.rawImage ||
+              '',
+
+            imageUrl:
+              property.imageUrl ||
+              property.image ||
+              property.rawImage ||
+              '',
+
+            sourceUrl:
+              property.sourceUrl ||
+              property.rawLink ||
+              property.link ||
+              '',
+          };
+        }
+      );
+
+    console.log(
+      '[Properties] Normalized AI properties:',
+      normalizedProperties.length
+    );
+
+    // Update local state for filtering
     setProperties(normalizedProperties);
 
-    if (data.aiSummary) {
-      setAiSummary(data.aiSummary);
+    // Update lifted state for persistence
+    if (setAiProperties) {
+      setAiProperties(normalizedProperties);
+    }
+
+    // IMPORTANT:
+    // Backend sends "searchSummary"
+    const summary =
+      data.searchSummary ||
+      data.aiSummary ||
+      '';
+
+    console.log(
+      '[Properties] Search Summary:',
+      summary
+    );
+
+    if (setAiSummary) {
+      setAiSummary(summary);
+    }
+
+    // Tell the page that these are AI results.
+    if (setIsAISearch) {
+      setIsAISearch(true);
     }
   };
 
+  // -----------------------------------------------------------
   // Try to determine city from location text
-  const extractCity = (location = '') => {
-    const locationText = String(location).toLowerCase();
+  // -----------------------------------------------------------
 
-    if (locationText.includes('islamabad')) {
+  const extractCity = (
+    location = ''
+  ) => {
+    const locationText =
+      String(location).toLowerCase();
+
+    if (
+      locationText.includes(
+        'islamabad'
+      )
+    ) {
       return 'Islamabad';
     }
 
-    if (locationText.includes('lahore')) {
+    if (
+      locationText.includes(
+        'lahore'
+      )
+    ) {
       return 'Lahore';
     }
 
-    if (locationText.includes('karachi')) {
+    if (
+      locationText.includes(
+        'karachi'
+      )
+    ) {
       return 'Karachi';
     }
 
-    if (locationText.includes('rawalpindi')) {
+    if (
+      locationText.includes(
+        'rawalpindi'
+      )
+    ) {
       return 'Rawalpindi';
     }
 
-    if (locationText.includes('peshawar')) {
+    if (
+      locationText.includes(
+        'peshawar'
+      )
+    ) {
       return 'Peshawar';
     }
 
     return '';
   };
 
-  // Convert price into a number where possible
-  const getPriceValue = (property) => {
-    if (typeof property.price === 'number') {
+  // -----------------------------------------------------------
+  // Convert price into Crore
+  // -----------------------------------------------------------
+
+  const getPriceValue = (
+    property
+  ) => {
+    if (
+      typeof property.price ===
+      'number'
+    ) {
       return property.price;
     }
 
@@ -190,33 +318,47 @@ export default function Properties({
       return 0;
     }
 
-    const priceText = String(property.price)
-      .toLowerCase()
-      .replace(/,/g, '')
-      .replace(/₨/g, '')
-      .trim();
+    const priceText =
+      String(property.price)
+        .toLowerCase()
+        .replace(/,/g, '')
+        .replace(/₨/g, '')
+        .trim();
 
-    const numberMatch = priceText.match(/[\d.]+/);
+    const numberMatch =
+      priceText.match(/[\d.]+/);
 
     if (!numberMatch) {
       return 0;
     }
 
-    const number = parseFloat(numberMatch[0]);
+    const number =
+      parseFloat(
+        numberMatch[0]
+      );
 
-    if (priceText.includes('crore') || priceText.includes('cr')) {
+    if (
+      priceText.includes(
+        'crore'
+      ) ||
+      priceText.includes('cr')
+    ) {
       return number;
     }
 
     if (
-      priceText.includes('million') ||
+      priceText.includes(
+        'million'
+      ) ||
       priceText.includes('m')
     ) {
       return number / 10;
     }
 
     if (
-      priceText.includes('lakh') ||
+      priceText.includes(
+        'lakh'
+      ) ||
       priceText.includes('lac')
     ) {
       return number / 100;
@@ -225,25 +367,37 @@ export default function Properties({
     return number;
   };
 
+  // -----------------------------------------------------------
+  // Loading
+  // -----------------------------------------------------------
+
   if (loading) {
     return (
       <div className="min-h-screen pt-24 text-center bg-[#F7F5F0]">
         <div className="flex flex-col items-center justify-center">
+
           <div className="w-10 h-10 border-4 border-[#E2DDD4] border-t-[#B8945A] rounded-full animate-spin mb-4" />
 
           <p className="text-[#7A7568] text-sm">
             Loading live properties...
           </p>
+
         </div>
       </div>
     );
   }
 
+  // -----------------------------------------------------------
+  // Normal frontend filters
+  // -----------------------------------------------------------
+
   const filtered = properties
     .filter((property) => {
       const propertyCity =
         property.city ||
-        extractCity(property.location);
+        extractCity(
+          property.location
+        );
 
       const propertyType =
         property.type ||
@@ -256,19 +410,25 @@ export default function Properties({
           0
       );
 
-      const priceValue = getPriceValue(property);
+      const priceValue =
+        getPriceValue(
+          property
+        );
 
       if (
         city !== 'All Cities' &&
         propertyCity &&
-        propertyCity.toLowerCase() !== city.toLowerCase()
+        propertyCity.toLowerCase() !==
+          city.toLowerCase()
       ) {
         return false;
       }
 
       if (
         type !== 'All Types' &&
-        propertyType.toLowerCase() !== type.toLowerCase()
+        propertyType &&
+        propertyType.toLowerCase() !==
+          type.toLowerCase()
       ) {
         return false;
       }
@@ -282,24 +442,30 @@ export default function Properties({
 
       if (
         minBeds > 0 &&
-        bedrooms > 0 &&
         bedrooms < minBeds
       ) {
         return false;
       }
 
       if (search) {
-        const searchText = search.toLowerCase();
+        const searchText =
+          search.toLowerCase();
 
         const title =
-          property.title?.toLowerCase() || '';
+          property.title?.toLowerCase() ||
+          '';
 
         const location =
-          property.location?.toLowerCase() || '';
+          property.location?.toLowerCase() ||
+          '';
 
         if (
-          !title.includes(searchText) &&
-          !location.includes(searchText)
+          !title.includes(
+            searchText
+          ) &&
+          !location.includes(
+            searchText
+          )
         ) {
           return false;
         }
@@ -308,29 +474,50 @@ export default function Properties({
       return true;
     })
     .sort((a, b) => {
-      if (sort === 'Price: Low to High') {
+      if (
+        sort ===
+        'Price: Low to High'
+      ) {
         return (
           getPriceValue(a) -
           getPriceValue(b)
         );
       }
 
-      if (sort === 'Price: High to Low') {
+      if (
+        sort ===
+        'Price: High to Low'
+      ) {
         return (
           getPriceValue(b) -
           getPriceValue(a)
         );
       }
 
-      if (sort === 'Most Bedrooms') {
+      if (
+        sort ===
+        'Most Bedrooms'
+      ) {
         return (
-          Number(b.bedrooms ?? b.beds ?? 0) -
-          Number(a.bedrooms ?? a.beds ?? 0)
+          Number(
+            b.bedrooms ??
+              b.beds ??
+              0
+          ) -
+          Number(
+            a.bedrooms ??
+              a.beds ??
+              0
+          )
         );
       }
 
       return 0;
     });
+
+  // -----------------------------------------------------------
+  // Reset filters
+  // -----------------------------------------------------------
 
   const resetFilters = () => {
     setCity('All Cities');
@@ -341,12 +528,72 @@ export default function Properties({
     setSort('Recommended');
   };
 
+  // -----------------------------------------------------------
+  // Clear AI search
+  // -----------------------------------------------------------
+
+  const clearAISearch = async () => {
+    if (setIsAISearch) {
+      setIsAISearch(false);
+    }
+
+    if (setAiSummary) {
+      setAiSummary('');
+    }
+
+    if (setAiProperties) {
+      setAiProperties([]);
+    }
+
+    resetFilters();
+
+    try {
+      const res =
+        await API.get(
+          '/properties'
+        );
+
+      if (
+        Array.isArray(
+          res.data
+        )
+      ) {
+        setProperties(
+          res.data
+        );
+      } else if (
+        Array.isArray(
+          res.data?.properties
+        )
+      ) {
+        setProperties(
+          res.data.properties
+        );
+      } else {
+        setProperties([]);
+      }
+    } catch (err) {
+      console.error(
+        'Failed to reload properties:',
+        err
+      );
+
+      setProperties([]);
+    }
+  };
+
+  // -----------------------------------------------------------
+  // UI
+  // -----------------------------------------------------------
+
   return (
     <div className="min-h-screen pt-16 bg-[#F7F5F0] font-['Outfit',sans-serif]">
 
       {/* Hero */}
       <div className="bg-[#18180F] py-16">
+
         <div className="max-w-7xl mx-auto px-6">
+
           <p className="text-[#B8945A] text-xs font-semibold tracking-widest uppercase mb-3">
             Property Listings
           </p>
@@ -358,29 +605,68 @@ export default function Properties({
           <p className="text-white/60 text-base max-w-lg">
             Browse our full portfolio or search using our autonomous Gemini AI Agent.
           </p>
+
         </div>
+
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-10">
 
         {/* AI Search */}
         <div className="mb-10">
+
           <AIPromptBar
             initialQuery={initialQuery}
-            onSearchResults={handleAISearchResults}
+            onSearchResults={
+              handleAISearchResults
+            }
+            setLoading={setAiLoading}
           />
+
         </div>
 
         {/* AI Summary */}
         {aiSummary && (
-          <div className="bg-white border-l-4 border-[#B8945A] rounded-r-2xl p-5 mb-8 shadow-sm">
-            <p className="text-xs font-semibold uppercase text-[#B8945A] tracking-wider mb-1">
-              ✨ Gemini AI Search Insights
-            </p>
+          <div className="bg-[#18180F] text-white rounded-2xl p-5 mb-8 shadow-sm border border-[#B8945A]/30">
 
-            <p className="text-sm text-[#18180F]">
+            <div className="flex items-center gap-2 mb-2">
+
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#B8945A]">
+                ✨ AI Assistant Summary
+              </span>
+
+            </div>
+
+            <p className="text-sm text-[#EDEAE2] leading-relaxed">
               {aiSummary}
             </p>
+
+          </div>
+        )}
+
+        {/* AI search active */}
+        {isAISearch && (
+          <div className="flex items-center justify-between gap-4 mb-6">
+
+            <div>
+              <p className="text-xs text-[#7A7568]">
+                Autonomous AI results
+              </p>
+
+              <h2 className="font-['Fraunces',serif] text-2xl font-semibold text-[#18180F] italic">
+                AI Recommended Properties
+              </h2>
+            </div>
+
+            <button
+              onClick={
+                clearAISearch
+              }
+              className="px-4 py-2 bg-white border border-[#E2DDD4] rounded-lg text-sm text-[#18180F] hover:border-[#B8945A] transition-colors"
+            >
+              Clear AI Search
+            </button>
+
           </div>
         )}
 
@@ -394,7 +680,9 @@ export default function Properties({
               type="text"
               value={search}
               onChange={(e) =>
-                setSearch(e.target.value)
+                setSearch(
+                  e.target.value
+                )
               }
               placeholder="Search by title or area..."
               className="sm:col-span-2 lg:col-span-1 px-4 py-2.5 bg-[#F7F5F0] border border-[#E2DDD4] rounded-lg text-sm text-[#18180F] placeholder-[#C5BFB5] outline-none focus:border-[#B8945A] transition-colors"
@@ -404,42 +692,52 @@ export default function Properties({
             <select
               value={city}
               onChange={(e) =>
-                setCity(e.target.value)
+                setCity(
+                  e.target.value
+                )
               }
               className="px-4 py-2.5 bg-[#F7F5F0] border border-[#E2DDD4] rounded-lg text-sm text-[#18180F] outline-none focus:border-[#B8945A] transition-colors"
             >
-              {CITIES.map((item) => (
-                <option
-                  key={item}
-                  value={item}
-                >
-                  {item}
-                </option>
-              ))}
+              {CITIES.map(
+                (item) => (
+                  <option
+                    key={item}
+                    value={item}
+                  >
+                    {item}
+                  </option>
+                )
+              )}
             </select>
 
             {/* Type */}
             <select
               value={type}
               onChange={(e) =>
-                setType(e.target.value)
+                setType(
+                  e.target.value
+                )
               }
               className="px-4 py-2.5 bg-[#F7F5F0] border border-[#E2DDD4] rounded-lg text-sm text-[#18180F] outline-none focus:border-[#B8945A] transition-colors"
             >
-              {TYPES.map((item) => (
-                <option
-                  key={item}
-                  value={item}
-                >
-                  {item}
-                </option>
-              ))}
+              {TYPES.map(
+                (item) => (
+                  <option
+                    key={item}
+                    value={item}
+                  >
+                    {item}
+                  </option>
+                )
+              )}
             </select>
 
             {/* Budget */}
             <div className="flex flex-col gap-1">
+
               <label className="text-xs text-[#7A7568]">
-                Max Budget: ₨{maxBudget} Cr
+                Max Budget: ₨
+                {maxBudget} Cr
               </label>
 
               <input
@@ -447,18 +745,24 @@ export default function Properties({
                 min="1"
                 max="10"
                 step="0.5"
-                value={maxBudget}
+                value={
+                  maxBudget
+                }
                 onChange={(e) =>
                   setMaxBudget(
-                    parseFloat(e.target.value)
+                    parseFloat(
+                      e.target.value
+                    )
                   )
                 }
                 className="accent-[#B8945A]"
               />
+
             </div>
 
             {/* Bedrooms */}
             <div className="flex flex-col gap-1">
+
               <label className="text-xs text-[#7A7568]">
                 Min Bedrooms:{' '}
                 {minBeds === 0
@@ -471,7 +775,9 @@ export default function Properties({
                 min="0"
                 max="6"
                 step="1"
-                value={minBeds}
+                value={
+                  minBeds
+                }
                 onChange={(e) =>
                   setMinBeds(
                     parseInt(
@@ -482,20 +788,26 @@ export default function Properties({
                 }
                 className="accent-[#B8945A]"
               />
+
             </div>
+
           </div>
 
           {/* Results + Sort */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-4 pt-4 border-t border-[#E2DDD4]">
 
             <p className="text-sm text-[#7A7568]">
+
               <span className="font-semibold text-[#18180F]">
                 {filtered.length}
               </span>{' '}
+
               properties found
+
             </p>
 
             <div className="flex items-center gap-2">
+
               <span className="text-xs text-[#7A7568]">
                 Sort by:
               </span>
@@ -503,25 +815,46 @@ export default function Properties({
               <select
                 value={sort}
                 onChange={(e) =>
-                  setSort(e.target.value)
+                  setSort(
+                    e.target.value
+                  )
                 }
                 className="text-sm text-[#18180F] bg-transparent border-none outline-none font-medium cursor-pointer"
               >
-                {SORT_OPTIONS.map((option) => (
-                  <option
-                    key={option}
-                    value={option}
-                  >
-                    {option}
-                  </option>
-                ))}
+                {SORT_OPTIONS.map(
+                  (option) => (
+                    <option
+                      key={option}
+                      value={option}
+                    >
+                      {option}
+                    </option>
+                  )
+                )}
               </select>
+
             </div>
+
           </div>
+
         </div>
 
         {/* Property Results */}
-        {filtered.length === 0 ? (
+
+        {aiLoading ? (
+
+          <div className="text-center py-20 bg-white rounded-2xl border border-[#E2DDD4]">
+
+            <div className="w-10 h-10 border-4 border-[#E2DDD4] border-t-[#B8945A] rounded-full animate-spin mx-auto mb-4" />
+
+            <p className="text-[#7A7568] text-sm">
+              Searching live property portals...
+            </p>
+
+          </div>
+
+        ) : filtered.length === 0 ? (
+
           <div className="text-center py-20 bg-white rounded-2xl border border-[#E2DDD4]">
 
             <div className="text-4xl mb-4">
@@ -533,46 +866,78 @@ export default function Properties({
             </p>
 
             <button
-              onClick={resetFilters}
+              onClick={
+                isAISearch
+                  ? clearAISearch
+                  : resetFilters
+              }
               className="text-sm text-[#B8945A] font-medium hover:underline"
             >
-              Reset filters
+              {isAISearch
+                ? 'Clear AI Search'
+                : 'Reset filters'}
             </button>
+
           </div>
+
         ) : (
+
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
 
-            {filtered.map((property, index) => {
-              const propertyId =
-                property.id ||
-                property._id ||
-                `property-${index}`;
+            {filtered.map(
+              (
+                property,
+                index
+              ) => {
 
-              return (
-                <PropertyCard
-                  key={propertyId}
-                  property={property}
-                  onClick={() => {
-                    if (onNavigate) {
-                      onNavigate(
-                        'property',
-                        {
-                          id: propertyId,
-                          property,
-                        }
-                      );
+                const propertyId =
+                  property.id ||
+                  property._id ||
+                  property.sourceUrl ||
+                  `property-${index}`;
+
+                return (
+                  <PropertyCard
+                    key={
+                      propertyId
                     }
-                  }}
-                  saved={savedIds.includes(
-                    propertyId
-                  )}
-                  onSave={onSave}
-                />
-              );
-            })}
+                    property={
+                      property
+                    }
+                    onClick={() => {
+
+                      if (
+                        onNavigate
+                      ) {
+                        onNavigate(
+                          'property',
+                          {
+                            id: propertyId,
+                            property:
+                              property,
+                          }
+                        );
+                      }
+
+                    }}
+                    saved={savedIds.includes(
+                      String(
+                        propertyId
+                      )
+                    )}
+                    onSave={
+                      onSave
+                    }
+                  />
+                );
+
+              }
+            )}
 
           </div>
+
         )}
+
       </div>
     </div>
   );

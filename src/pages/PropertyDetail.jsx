@@ -67,11 +67,11 @@ export default function PropertyDetail({
     'Price unavailable';
 
   const bedrooms = Number(
-    property.bedrooms ?? property.beds ?? 0
+    property.bedrooms ?? property.beds ?? property.rawBedrooms ?? 0
   );
 
   const bathrooms = Number(
-    property.bathrooms ?? property.baths ?? 0
+    property.bathrooms ?? property.baths ?? property.rawBathrooms ?? 0
   );
 
   const area =
@@ -167,8 +167,29 @@ export default function PropertyDetail({
   return (
     <div className="min-h-screen bg-[#F7F5F0]">
 
-      {/* Breadcrumb */}
-      <div className="max-w-7xl mx-auto px-6 pt-8">
+      {/* Back Button + Breadcrumb */}
+      <div className="max-w-7xl mx-auto px-6 pt-6">
+        <button
+          onClick={() => onNavigate && onNavigate('properties')}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-[#E2DDD4] text-sm font-medium text-[#18180F] hover:border-[#B8945A] hover:text-[#B8945A] transition-all shadow-sm mb-4"
+        >
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+          Back to Properties
+        </button>
+        </button>
+
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <button
             onClick={() => onNavigate && onNavigate('properties')}
