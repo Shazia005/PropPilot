@@ -42,9 +42,7 @@ export default function FeaturedListings({ properties = [], savedIds = [], onSav
 
   const formatPrice = (val) => {
     if (!val) return 'Contact for Price';
-    if (typeof val === 'number') return `Rs ${val.toLocaleString()}`;
-    if (typeof val === 'string' && !val.toLowerCase().includes('rs')) return `Rs ${val}`;
-    return val;
+    return String(val).trim();
   };
 
   return (
@@ -78,7 +76,7 @@ export default function FeaturedListings({ properties = [], savedIds = [], onSav
             return (
               <div 
                 key={itemId} 
-                onClick={() => onNavigate && onNavigate('property', { id: itemId })}
+                onClick={() => onNavigate && onNavigate('property', { id: itemId, property: item })}
                 className="group bg-[#F7F5F0] rounded-2xl overflow-hidden border border-[#E2DDD4] transition-all hover:shadow-xl cursor-pointer"
               >
                 <div className="relative h-64 overflow-hidden">
@@ -93,7 +91,7 @@ export default function FeaturedListings({ properties = [], savedIds = [], onSav
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (onSave) onSave(itemId);
+                      if (onSave) onSave(itemId, item);
                     }}
                     className={`absolute top-4 right-4 bg-white/80 backdrop-blur-md p-2 rounded-full transition-colors ${
                       isSaved ? 'text-red-500' : 'text-[#18180F] hover:text-red-500'

@@ -55,6 +55,7 @@ export default function Properties({
   const [minBeds, setMinBeds] = useState(0);
   const [sort, setSort] = useState('Recommended');
   const [search, setSearch] = useState('');
+  const [isFallback, setIsFallback] = useState(false);
 
   // -----------------------------------------------------------
   // Load normal database properties (skip if AI results exist)
@@ -245,6 +246,23 @@ export default function Properties({
     if (setIsAISearch) {
       setIsAISearch(true);
     }
+
+    // Mark as fallback if server says so.
+    if (data.isFallback) {
+      setIsFallback(true);
+
+      // Adjust maxBudget to fit fallback properties
+      const maxPrice = normalizedProperties.reduce((max, p) => {
+        const val = getPriceValue(p);
+        return val > max ? val : max;
+      }, 0);
+
+      if (maxPrice > maxBudget) {
+        setMaxBudget(Math.ceil(maxPrice));
+      }
+    } else {
+      setIsFallback(false);
+    }
   };
 
   // -----------------------------------------------------------
@@ -301,7 +319,8 @@ export default function Properties({
   };
 
   // -----------------------------------------------------------
-  // Convert price into Crore
+  // Convert price string into Crore value
+  // e.g. "3.6 Crore" → 3.6, "49 Lakh" → 0.49, "36500000" → 3.65
   // -----------------------------------------------------------
 
   const getPriceValue = (
@@ -322,6 +341,7 @@ export default function Properties({
       String(property.price)
         .toLowerCase()
         .replace(/,/g, '')
+        .replace(/pkr/g, '')
         .replace(/₨/g, '')
         .trim();
 
@@ -338,33 +358,24 @@ export default function Properties({
       );
 
     if (
-      priceText.includes(
-        'crore'
-      ) ||
+      priceText.includes('crore') ||
       priceText.includes('cr')
     ) {
       return number;
     }
 
     if (
-      priceText.includes(
-        'million'
-      ) ||
-      priceText.includes('m')
-    ) {
-      return number / 10;
-    }
-
-    if (
-      priceText.includes(
-        'lakh'
-      ) ||
+      priceText.includes('lakh') ||
       priceText.includes('lac')
     ) {
       return number / 100;
     }
 
-    return number;
+    if (number >= 100000) {
+      return number / 10000000;
+    }
+
+    return 0;
   };
 
   // -----------------------------------------------------------
@@ -537,6 +548,8 @@ export default function Properties({
       setIsAISearch(false);
     }
 
+    setIsFallback(false);
+
     if (setAiSummary) {
       setAiSummary('');
     }
@@ -650,11 +663,15 @@ export default function Properties({
 
             <div>
               <p className="text-xs text-[#7A7568]">
-                Autonomous AI results
+                {isFallback
+                  ? 'No exact matches — showing closest alternatives'
+                  : 'Autonomous AI results'}
               </p>
 
               <h2 className="font-['Fraunces',serif] text-2xl font-semibold text-[#18180F] italic">
-                AI Recommended Properties
+                {isFallback
+                  ? 'Closest Alternatives'
+                  : 'AI Recommended Properties'}
               </h2>
             </div>
 
@@ -743,7 +760,7 @@ export default function Properties({
               <input
                 type="range"
                 min="1"
-                max="10"
+                max="1000"
                 step="0.5"
                 value={
                   maxBudget

@@ -61,10 +61,14 @@ export default function PropertyDetail({
     property.propertyType ||
     'House';
 
-  const price =
+  const priceRaw =
     property.price ||
     property.rawPrice ||
     'Price unavailable';
+
+  const price = typeof priceRaw === 'string'
+    ? priceRaw.replace(/^Rs\s*/i, '').trim()
+    : String(priceRaw);
 
   const bedrooms = Number(
     property.bedrooms ?? property.beds ?? property.rawBedrooms ?? 0
@@ -187,7 +191,6 @@ export default function PropertyDetail({
             />
           </svg>
           Back to Properties
-        </button>
         </button>
 
         <div className="flex items-center gap-2 text-sm text-gray-500">

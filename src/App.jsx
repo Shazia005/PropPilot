@@ -64,15 +64,6 @@ export default function App() {
   });
 
   // =========================================================
-  // AI SEARCH STATE (persists across navigation)
-  // =========================================================
-
-  const [aiProperties, setAiProperties] = useState([]);
-  const [aiSummary, setAiSummary] = useState('');
-  const [isAISearch, setIsAISearch] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-
-  // =========================================================
   // LOAD SAVED PROPERTIES
   // =========================================================
 
@@ -503,6 +494,67 @@ export default function App() {
         <About
           onNavigate={handleNavigate}
         />
+      )}
+
+      {/* ===================================================
+          PRIVACY / TERMS / CONTACT PAGES
+      =================================================== */}
+
+      {currentPage === 'privacy' && (
+        <div className="min-h-screen bg-[#F7F5F0] pt-24 pb-16 px-6 font-['Outfit',sans-serif]">
+          <div className="max-w-2xl mx-auto">
+            <h1 className="font-['Fraunces',serif] text-3xl font-semibold text-[#18180F] italic mb-6">Privacy Policy</h1>
+            <p className="text-[#7A7568] text-sm leading-relaxed mb-4">
+              EstateAI respects your privacy. We only collect personal information necessary to provide our property search services.
+            </p>
+            <p className="text-[#7A7568] text-sm leading-relaxed mb-4">
+              Your search queries and saved properties are stored securely and never shared with third parties without your consent.
+            </p>
+            <p className="text-[#7A7568] text-sm leading-relaxed mb-8">
+              Contact data submitted through inquiry forms is used solely to connect you with the relevant property agent.
+            </p>
+            <button onClick={() => handleNavigate('landing')} className="text-sm text-[#B8945A] font-medium hover:underline">
+              Back to Home
+            </button>
+          </div>
+        </div>
+      )}
+
+      {currentPage === 'terms' && (
+        <div className="min-h-screen bg-[#F7F5F0] pt-24 pb-16 px-6 font-['Outfit',sans-serif]">
+          <div className="max-w-2xl mx-auto">
+            <h1 className="font-['Fraunces',serif] text-3xl font-semibold text-[#18180F] italic mb-6">Terms of Service</h1>
+            <p className="text-[#7A7568] text-sm leading-relaxed mb-4">
+              By using EstateAI, you agree to these terms. Our AI-powered search aggregates publicly available property listings for informational purposes.
+            </p>
+            <p className="text-[#7A7568] text-sm leading-relaxed mb-4">
+              Property data is sourced from third-party platforms. EstateAI does not guarantee the accuracy or availability of any listing.
+            </p>
+            <p className="text-[#7A7568] text-sm leading-relaxed mb-8">
+              All transactions and agreements are between the buyer and the listing agent or developer.
+            </p>
+            <button onClick={() => handleNavigate('landing')} className="text-sm text-[#B8945A] font-medium hover:underline">
+              Back to Home
+            </button>
+          </div>
+        </div>
+      )}
+
+      {currentPage === 'contact' && (
+        <div className="min-h-screen bg-[#F7F5F0] pt-24 pb-16 px-6 font-['Outfit',sans-serif]">
+          <div className="max-w-2xl mx-auto text-center">
+            <h1 className="font-['Fraunces',serif] text-3xl font-semibold text-[#18180F] italic mb-6">Contact Us</h1>
+            <p className="text-[#7A7568] text-sm leading-relaxed mb-4">
+              Have questions or feedback? We would love to hear from you.
+            </p>
+            <p className="text-[#7A7568] text-sm leading-relaxed mb-8">
+              Reach out to us at <span className="font-medium text-[#18180F]">support@estateai.pk</span> or try our AI Assistant for instant property help.
+            </p>
+            <button onClick={() => handleNavigate('ai')} className="bg-[#18180F] text-[#F7F5F0] text-sm font-medium px-6 py-3 rounded-xl hover:bg-[#2a2a1a] transition-colors">
+              Try AI Assistant
+            </button>
+          </div>
+        </div>
       )}
 
       {/* ===================================================

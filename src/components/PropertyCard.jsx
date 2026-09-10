@@ -69,19 +69,7 @@ const propertyId = _id || id || property.sourceUrl;
 
   const formatPrice = (val) => {
     if (!val) return 'Contact for Price';
-
-    if (typeof val === 'number') {
-      return `Rs ${val.toLocaleString()}`;
-    }
-
-    if (
-      typeof val === 'string' &&
-      !val.toLowerCase().includes('rs')
-    ) {
-      return `Rs ${val}`;
-    }
-
-    return val;
+    return String(val).trim();
   };
 
   const handleSave = (e) => {
