@@ -63,7 +63,7 @@ const propertyId = _id || id || property.sourceUrl;
 
   const displayBeds = bedrooms ?? beds ?? 0;
 
-  const displayBaths = bathrooms ?? baths ?? 0;
+  const displayBaths = bathrooms ?? baths ?? null;
 
   const displaySqFt = areaSqFt || sqft || area || 'N/A';
 
@@ -186,7 +186,7 @@ onSave(propertyId, property);    }
               />
             </svg>
 
-            <span>{displayBaths} Baths</span>
+            <span>{displayBaths != null ? displayBaths : 'N/A'} Baths</span>
           </div>
 
           {/* Area */}

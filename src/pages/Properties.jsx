@@ -179,12 +179,7 @@ export default function Properties({
                 0
             ),
 
-            bathrooms: Number(
-              property.bathrooms ??
-                property.baths ??
-                property.rawBathrooms ??
-                0
-            ),
+            bathrooms: Number(property.bathrooms ?? property.baths ?? property.rawBathrooms) || null,
 
             area:
               property.area ||
